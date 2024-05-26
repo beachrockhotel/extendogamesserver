@@ -7,7 +7,7 @@ class MenuItem(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     name = db.Column(db.String(100), nullable=False)
     price = db.Column(db.Float, nullable=False)
-    image_url = db.Column(db.String(255), nullable=True)  # URL изображения товара
+    image_url = db.Column(db.String(255), nullable=True)
 
     def __repr__(self):
         return f'<MenuItem {self.name}>'
@@ -18,8 +18,7 @@ class Order(db.Model):
     user_email = db.Column(db.String(100), nullable=False)
     table_number = db.Column(db.String(20), nullable=True)
     total_price = db.Column(db.Float, nullable=False)
-    order_time = db.Column(db.DateTime, default=datetime.utcnow)  # Обратите внимание на default
-
+    order_time = db.Column(db.DateTime, default=datetime.utcnow)
     items = db.relationship('OrderItem', backref='order', lazy=True)
 
     def __repr__(self):
@@ -94,13 +93,19 @@ class SupportQuestion(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     user_email = db.Column(db.String(100), nullable=False)
     question_text = db.Column(db.Text, nullable=False)
+    user_name = db.Column(db.String(100), nullable=False)  # Новое поле
 
     def __repr__(self):
-        return f'<SupportQuestion {self.user_email}>'
+        return f'<SupportQuestion {self.user_email} - {self.user_name}>'
+
 
 class PhoneNumber(db.Model):
     id = db.Column(db.Integer, primary_key=True)
-    phone = db.Column(db.String(15), nullable=False)
+    phone = db.Column(db.String(20), nullable=False)
+    email = db.Column(db.String(100), nullable=False)
+    name = db.Column(db.String(100), nullable=False)
+
+
 
 class Question(db.Model):
     id = db.Column(db.Integer, primary_key=True)
