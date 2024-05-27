@@ -1,8 +1,6 @@
 import logging
-from flask import Flask, request, jsonify
+from flask import request, jsonify
 from models import db, MenuItem, Order, OrderItem
-
-app = Flask(__name__)
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
@@ -21,11 +19,9 @@ def add_menu_item():
     db.session.commit()
     return jsonify({"message": "Позиция была создана", "id": new_item.id, "image_url": image_url}), 201
 
-
 def get_menu():
     menu_items = MenuItem.query.all()
     return jsonify(menu=[{'id': item.id, 'name': item.name, 'price': item.price, 'image_url': item.image_url} for item in menu_items])
-
 
 def make_order():
     data = request.json
@@ -69,8 +65,6 @@ def make_order():
         logger.error(f"Error while creating order: {e}")
         return jsonify({"error": str(e)}), 400
 
-
-
 def get_orders():
     orders = Order.query.all()
     return jsonify(orders=[
@@ -98,8 +92,6 @@ def aggregate_items(items):
             aggregated[item.menu_item.name]['quantity'] += item.quantity
     return list(aggregated.values())
 
-
-
 def get_user_orders(user_email):
     orders = Order.query.filter(Order.user_email == user_email).all()
     if not orders:
@@ -117,3 +109,20 @@ def get_user_orders(user_email):
             'price': item.price_at_time_of_order
         } for item in order.items]
     } for order in orders])
+
+def calculate_food_order_statistics(from_date, to_date):
+    results = db.session.query(
+        db.func.date(Order.order_time).label('date'),
+        db.func.sum(Order.total_price).label('revenue'),
+        db.func.count(Order.id).label('count')
+    ).filter(
+        db.func.date(Order.order_time) >= from_date,
+        db.func.date(Order.order_time) <= to_date
+    ).group_by(db.func.date(Order.order_time)).all()
+
+    return {
+        result.date.strftime("%Y-%m-%d"): {
+            "revenue": result.revenue,
+            "count": result.count
+        } for result in results
+    }

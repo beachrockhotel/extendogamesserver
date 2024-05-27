@@ -1,15 +1,13 @@
-from flask import render_template, request, jsonify
+from flask import Flask, render_template, request, jsonify
 from models import db
 import os
-from menu_service import add_menu_item, get_menu, make_order, get_orders, get_user_orders
+from menu_service import add_menu_item, get_menu, make_order, get_orders, get_user_orders, calculate_food_order_statistics
 from news_service import get_news, add_news
-from reservation_service import reserve_seat, get_reservations, check_availability, cancel_reservation, get_user_reservations
-from flask import Flask
+from reservation_service import reserve_seat, get_reservations, check_availability, cancel_reservation, get_user_reservations, calculate_reservation_statistics
 import logging
 from support_service import post_support_request, get_support_requests, post_support_phone_number, get_support_phone
 from tournament_service import get_tournaments, add_tournament, add_register_team, get_teams
 from review_service import get_reviews, add_review
-from flask import Flask, request, jsonify
 import firebase_admin
 from firebase_admin import messaging, credentials
 from question_service import get_questions, add_question, add_answer
@@ -24,14 +22,12 @@ app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 
 db.init_app(app)
 
-
 is_db_initialized = False
 
 with app.app_context():
     db.create_all()
 
 logging.basicConfig(level=logging.DEBUG)
-
 
 @app.before_request
 def create_tables():
@@ -114,9 +110,9 @@ def create_review():
 
 @app.route('/user_orders', methods=['GET'])
 def user_orders():
-    user_email = request.args.get('email')  # Получаем email из параметров запроса
+    user_email = request.args.get('email')
     if not user_email:
-        return jsonify({"error": "Email parameter is required"}), 400  # Возвращаем ошибку, если email не предоставлен
+        return jsonify({"error": "Email parameter is required"}), 400
 
     return get_user_orders(user_email)
 
@@ -136,27 +132,6 @@ def support_request_phone():
 def support_phone_numbers():
     return get_support_phone()
 
-@app.route('/send-notification', methods=['POST'])
-def send_notification():
-    logging.debug("Received send-notification request with data: %s", request.json)
-    token = request.json.get('adminToken')
-    table_number = request.json.get('tableNumber')
-
-    try:
-        message = messaging.Message(
-            notification=messaging.Notification(
-                title='Support Needed',
-                body=f'Help needed at table number: {table_number}'
-            ),
-            token=token
-        )
-        response = messaging.send(message)
-        logging.debug("Notification sent to token: %s with response: %s", token, response)
-        return jsonify({'success': True, 'response': response}), 200
-    except Exception as e:
-        logging.error("Failed to send notification due to: %s", str(e))
-        return jsonify({'error': str(e)}), 500
-
 @app.route('/questions', methods=['GET'])
 def questions():
     return get_questions()
@@ -168,6 +143,28 @@ def create_question():
 @app.route('/questions/<int:question_id>/answers', methods=['POST'])
 def create_answer(question_id):
     return add_answer(question_id)
+
+@app.route('/reservation_statistics', methods=['GET'])
+def reservation_statistics():
+    from_date = request.args.get('from_date')
+    to_date = request.args.get('to_date')
+
+    if not from_date or not to_date:
+        return jsonify({"error": "from_date and to_date parameters are required"}), 400
+
+    statistics = calculate_reservation_statistics(from_date, to_date)
+    return jsonify(statistics), 200
+
+@app.route('/food_order_statistics', methods=['GET'])
+def food_order_statistics():
+    from_date = request.args.get('from_date')
+    to_date = request.args.get('to_date')
+
+    if not from_date or not to_date:
+        return jsonify({"error": "from_date and to_date parameters are required"}), 400
+
+    statistics = calculate_food_order_statistics(from_date, to_date)
+    return jsonify(statistics), 200
 
 
 if __name__ == '__main__':

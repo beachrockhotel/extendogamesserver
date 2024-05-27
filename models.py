@@ -82,7 +82,7 @@ class Team(db.Model):
 
 class Review(db.Model):
     id = db.Column(db.Integer, primary_key=True)
-    user_email = db.Column(db.String(100), nullable=False)  # Changing from user_name to user_email
+    user_email = db.Column(db.String(100), nullable=False)
     text = db.Column(db.Text, nullable=False)
     rating = db.Column(db.Integer, nullable=False)
 
@@ -93,19 +93,16 @@ class SupportQuestion(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     user_email = db.Column(db.String(100), nullable=False)
     question_text = db.Column(db.Text, nullable=False)
-    user_name = db.Column(db.String(100), nullable=False)  # Новое поле
+    user_name = db.Column(db.String(100), nullable=False)
 
     def __repr__(self):
         return f'<SupportQuestion {self.user_email} - {self.user_name}>'
-
 
 class PhoneNumber(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     phone = db.Column(db.String(20), nullable=False)
     email = db.Column(db.String(100), nullable=False)
     name = db.Column(db.String(100), nullable=False)
-
-
 
 class Question(db.Model):
     id = db.Column(db.Integer, primary_key=True)
@@ -119,7 +116,7 @@ class Question(db.Model):
 class Answer(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     question_id = db.Column(db.Integer, db.ForeignKey('question.id'), nullable=False)
-    user_email = db.Column(db.String(100), nullable=False)  # Добавленный столбец
+    user_email = db.Column(db.String(100), nullable=False)
     text = db.Column(db.Text, nullable=False)
 
     def __repr__(self):
