@@ -39,3 +39,27 @@ def get_support_phone():
         return jsonify([{"phoneNumber": pn.phone, "email": pn.email, "name": pn.name} for pn in phone_numbers]), 200
     except Exception as e:
         return jsonify({"error": str(e)}), 500
+
+def clear_support_requests():
+    try:
+        num_deleted_support_questions = SupportQuestion.query.delete()
+        db.session.commit()
+        return jsonify({
+            "message": "Вопросы поддержки успешно очищены",
+            "deleted_support_questions": num_deleted_support_questions
+        }), 200
+    except Exception as e:
+        db.session.rollback()
+        return jsonify({"error": str(e)}), 500
+
+def clear_phone_numbers():
+    try:
+        num_deleted_phone_numbers = PhoneNumber.query.delete()
+        db.session.commit()
+        return jsonify({
+            "message": "Номера телефонов успешно очищены",
+            "deleted_phone_numbers": num_deleted_phone_numbers
+        }), 200
+    except Exception as e:
+        db.session.rollback()
+        return jsonify({"error": str(e)}), 500

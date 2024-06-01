@@ -1,11 +1,14 @@
 from flask import Flask, render_template, request, jsonify
-from models import db
+from models import db, Order, Reservation, OrderItem, SupportQuestion, PhoneNumber
 import os
-from menu_service import add_menu_item, get_menu, make_order, get_orders, get_user_orders, calculate_food_order_statistics
+from menu_service import add_menu_item, get_menu, make_order, get_orders, get_user_orders, \
+    calculate_food_order_statistics
 from news_service import get_news, add_news
-from reservation_service import reserve_seat, get_reservations, check_availability, cancel_reservation, get_user_reservations, calculate_reservation_statistics
+from reservation_service import reserve_seat, get_reservations, check_availability, cancel_reservation, \
+    get_user_reservations, calculate_reservation_statistics
 import logging
-from support_service import post_support_request, get_support_requests, post_support_phone_number, get_support_phone
+from support_service import post_support_request, get_support_requests, post_support_phone_number, get_support_phone, \
+    clear_support_requests, clear_phone_numbers
 from tournament_service import get_tournaments, add_tournament, add_register_team, get_teams
 from review_service import get_reviews, add_review
 import firebase_admin
@@ -161,10 +164,72 @@ def food_order_statistics():
     to_date = request.args.get('to_date')
 
     if not from_date or not to_date:
-        return jsonify({"error": "from_date and to_date parameters are required"}), 400
+        return jsonify({"error": "from_date и to_date параметры обязательны"}), 400
 
     statistics = calculate_food_order_statistics(from_date, to_date)
     return jsonify(statistics), 200
+
+@app.route('/clear_order_history', methods=['DELETE'])
+def clear_order_history():
+    try:
+        num_deleted_order_items = OrderItem.query.delete()
+        num_deleted_orders = Order.query.delete()
+        db.session.commit()
+        return jsonify({
+            "message": "История заказов успешно очищена",
+            "deleted_orders": num_deleted_orders,
+            "deleted_order_items": num_deleted_order_items
+        }), 200
+    except Exception as e:
+        db.session.rollback()
+        app.logger.error(f"Error occurred while clearing order history: {e}")
+        return jsonify({"error": str(e)}), 500
+
+@app.route('/clear_reservation_history', methods=['DELETE'])
+def clear_reservation_history():
+    try:
+        num_deleted_reservations = Reservation.query.delete()
+        db.session.commit()
+        return jsonify({
+            "message": "История бронирований успешно очищена",
+            "deleted_reservations": num_deleted_reservations
+        }), 200
+    except Exception as e:
+        db.session.rollback()
+        app.logger.error(f"Error occurred while clearing reservation history: {e}")
+        return jsonify({"error": str(e)}), 500
+
+@app.route('/clear_support_requests', methods=['DELETE'])
+def clear_support_requests_endpoint():
+    return clear_support_requests()
+
+@app.route('/clear_support_phones', methods=['DELETE'])
+def clear_support_phones():
+    return clear_phone_numbers()
+
+@app.route('/cancel_order', methods=['DELETE'])
+def cancel_order():
+    user_email = request.args.get('user_email')
+    table_number = request.args.get('table_number')
+
+    if not user_email or not table_number:
+        app.logger.error("Missing required parameters: user_email or table_number")
+        return jsonify({"error": "user_email и table_number параметры обязательны"}), 400
+
+    app.logger.info(f"Attempting to delete order for user_email: {user_email}, table_number: {table_number}")
+
+    order = Order.query.filter_by(user_email=user_email, table_number=table_number).first()
+    if order:
+        for item in order.items:
+            db.session.delete(item)
+        db.session.delete(order)
+        db.session.commit()
+        app.logger.info(f"Order deleted successfully for user_email: {user_email}, table_number: {table_number}")
+        return jsonify(message="Заказ успешно удалён")
+    else:
+        app.logger.error(f"Order not found for user_email: {user_email}, table_number: {table_number}")
+        return jsonify(message="Заказ не найден"), 404
+
 
 
 if __name__ == '__main__':
