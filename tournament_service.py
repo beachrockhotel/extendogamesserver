@@ -62,3 +62,12 @@ def get_teams():
         'discipline': team.discipline
     } for team in teams]
     return jsonify(teams=team_data)
+
+def delete_tournament(tournament_id):
+    tournament = Tournament.query.get(tournament_id)
+    if not tournament:
+        return jsonify(error="Tournament not found"), 404
+
+    db.session.delete(tournament)
+    db.session.commit()
+    return jsonify(message="Tournament deleted successfully"), 200

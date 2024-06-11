@@ -9,7 +9,7 @@ from reservation_service import reserve_seat, get_reservations, check_availabili
 import logging
 from support_service import post_support_request, get_support_requests, post_support_phone_number, get_support_phone, \
     clear_support_requests, clear_phone_numbers
-from tournament_service import get_tournaments, add_tournament, add_register_team, get_teams
+from tournament_service import get_tournaments, add_tournament, add_register_team, get_teams, delete_tournament
 from review_service import get_reviews, add_review
 import firebase_admin
 from firebase_admin import messaging, credentials
@@ -230,6 +230,9 @@ def cancel_order():
         app.logger.error(f"Order not found for user_email: {user_email}, table_number: {table_number}")
         return jsonify(message="Заказ не найден"), 404
 
+@app.route('/tournament/<int:tournament_id>', methods=['DELETE'])
+def delete_tournament_endpoint(tournament_id):
+    return delete_tournament(tournament_id)
 
 
 if __name__ == '__main__':

@@ -68,8 +68,8 @@ def check_availability():
 
     seat_number = data['placeNumber']
     start_time = datetime.strptime(f"{data['date']} {data['time']}", '%Y-%m-%d %H:%M:%S')
-    duration_hours = int(data['duration'])  # Продолжительность в часах
-    end_time = start_time + timedelta(hours=duration_hours)  # Переводим часы в timedelta
+    duration_hours = int(data['duration'])
+    end_time = start_time + timedelta(hours=duration_hours)
 
     reservations = Reservation.query.filter(
         Reservation.seat_number == seat_number,
@@ -111,6 +111,6 @@ def calculate_reservation_statistics(from_date, to_date):
         if date_str not in statistics:
             statistics[date_str] = {"count": 0, "revenue": 0.0}
         statistics[date_str]["count"] += 1
-        statistics[date_str]["revenue"] += reservation.duration * 100  # assuming costPerHour is 100
+        statistics[date_str]["revenue"] += reservation.duration * 100
 
     return statistics
